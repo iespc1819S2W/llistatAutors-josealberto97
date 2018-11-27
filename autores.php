@@ -1,4 +1,7 @@
-
+<?php
+session_start();
+session_unset();
+?>
 <!DOCTYPE html>
  <html>
  <head>
@@ -38,26 +41,14 @@ if ($mysqli->connect_error) {
 echo "Se ha podido conectar correctamente";
 echo "<br>";
 $mysqli->set_charset("utf8");
-/*Variable oculta con  el autor*/
-$ordenarpor = 'ID_AUT';
-/*Variable oculta con el orden*/
-$ordenarcon= 'ASC';
-/*Comprovamos si tienen valores*/
-if (isset($_POST['ordenarpor'])) {
-    $ordenarpor = $_POST['ordenarpor'];
-}
-if (isset($_POST['ordenarcon'])) {
-    $ordenarcon = $_POST['ordenarcon'];
-}
+
 /*Filtro */
 $filtra = "";
 $busqueda=(isset($_POST['busqueda'])? $_POST['busqueda'] : '');
 if($busqueda != ''){
     $filtra = "where ID_AUT = '$busqueda' OR NOM_AUT like '%$busqueda%'";
 }
-
 ?>
-
 <form name="formulario" action="" method="POST" >
    <input type="submit" name="Ascendente"  value="A-Z"  />
    <input type="submit" name="Descendente"  value="Z-A" /><BR>
@@ -78,8 +69,41 @@ if(isset($_POST['codiAsc'])){
 if(isset($_POST['codiDesc'])){
     $ordenar = "ID_AUT DESC";
 }
+
+$resultados=10;
+if (isset($_GET["pagina"])) {
+    if (is_numeric($_GET["pagina"])) {
+        if ($_GET["pagina"] == 1) {
+            $pagina=1;
+        }else{
+          $pagina=$_GET["pagina"];  
+        }
+    }
+}else{
+    $pagina=1;
+}
+$inicio=($pagina-1)*$resultados;
+
 $query = "SELECT ID_AUT, NOM_AUT FROM autors $filtra";
-$query .= " ORDER BY $ordenar LIMIT 0 , 20";
+$query .= " ORDER BY $ordenar LIMIT $inicio , $resultados";
+
+/*Obtenemos los datos de la consulta global*//*
+if(!isset($_SESSION["principal"])){
+$principal=$query;
+$_SESSION["principal"]=$principal;
+}else{
+    $principal=$_SESSION["principal"];
+}*/
+$principal="SELECT ID_AUT, NOM_AUT FROM autors $filtra";
+echo"hola".$principal;
+$consulta_global= mysqli_query($mysqli,$principal);
+/*Todos los resultados*/
+$total_registros=mysqli_num_rows($consulta_global);
+/*Obtener el total de paginas*/
+/*Registros/el limite que quiero*/
+$total_paginas= ceil($total_registros/$resultados);
+
+
 echo "<table border = 1 px>";
 if ($cursor = $mysqli->query($query)) {
     while ($row = $cursor->fetch_assoc()) {
@@ -96,21 +120,12 @@ if ($cursor = $mysqli->query($query)) {
     <input type ="text" name="busqueda" class="ancho" />
     <input type="submit" value="cercarID" >
     </fieldset>
-</form>
-
-
+</form><br>
 <?php
-/*Filtrar lo que llega*/
-
-/*10
-
-$mysqli->close();
-echo" Query utilizada para el orden<br>
-SELECT `ID_AUT`,`NOM_AUT` FROM `autors` ORDER BY `NOM_AUT` DESC LIMIT 0,10";
-*/
-
-
-?>
+for ($i=1; $i<=$total_paginas; $i++) {
+	//En el bucle, muestra la paginación
+	echo "<a href='?pagina=".$i."'>".$i."</a> | ";
+}; ?>
 
  </body>
  </html>
