@@ -23,6 +23,10 @@ session_unset();
   .ancho{
       width: 200px;
   }
+    .abajo{
+        width: 200px;
+
+    }
 </style>
  </head>
  <body>
@@ -139,16 +143,35 @@ Obtener el total de paginas
 Registros/el limite que quiero
 $total_paginas= ceil($total_registros/$resultados);
  */
+if (isset($_POST['Borrar'])) {
+    $borrar = $_POST['Borrar'];
+    $query = "DELETE From autors Where 'ID_AUT'=$borrar";
+    $cursor=$mysqli->query($query)OR die($query);
+}
+if (isset($_POST['incluir'])) {
+    $añadir = $_POST['incluir'];
+    $query = "UPDATE AUTORS SET ID_AUT=auto,NOM_AUT=auto  Where 'ID_AUT'=$añadir";
+
+}
+
 
 echo "<table border = 1 px>";
 if ($cursor = $mysqli->query($query)) {
     while ($row = $cursor->fetch_assoc()) {
-        echo "<tr><td>" . $row["ID_AUT"] . "</td><td>" . $row["NOM_AUT"] . "</td></tr>";
+        echo "<tr><td>" . $row["ID_AUT"] . "</td><td>" . $row["NOM_AUT"] . "</td>";
+        echo "<td><button type='submit' form='formulario' name='incluir' value='{$row["ID_AUT"]}'>
+        Añadir</button></td>";
+        echo "<td><button type='submit' form='formulario' name='Borrar' value='{$row["ID_AUT"]}'>
+    Borrar</button></td>";
+
+        echo " </tr>";
+
     }
     $cursor->free();
 }
 /*Input amb el cerca de nom o codi*/
 ?>
+<div>
 <form name="formulario" action="" method="POST" >
    <input type="submit" name="Ascendente"  value="A-Z"  />
    <input type="submit" name="Descendente"  value="Z-A" /><BR>
@@ -166,10 +189,12 @@ if ($cursor = $mysqli->query($query)) {
     <br>
     <input type ="text" name="busqueda" class="ancho" value="<?=$busqueda?>"/>
     <input type="submit" value="cercarID" >
-</form><br>
 
+    <input type="submit" name="mostrar" value="..." />
+</form><br>
+<div>
 <?php
-echo " $total_paginas" . "/" . "$pagina";
+echo " $total_paginas" . "/" . "$pagina <br>";
 /*
 <form name="buscar" action="" method="POST" >
 <fieldset>
@@ -178,6 +203,13 @@ echo " $total_paginas" . "/" . "$pagina";
 <input type="submit" value="cercarID" >
 </fieldset>
 </form><br>*/
+
+if (isset($_POST['mostrar'])) {
+    
+    echo"<div> <input type ='text' name='busquedaañadir' class='abajo' value='<?=$busqueda?>'/>";
+    echo " <input type='submit' value='Añadir' ></div>";
+
+ }else{echo "incluir";}
 ?>
 
 
