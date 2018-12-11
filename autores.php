@@ -1,47 +1,28 @@
-<?php
-session_start();
-session_unset();
-?>
+
 <!DOCTYPE html>
  <html>
  <head>
  <meta charset='UTF-8'>
  <title>AUTORS</title>
-<style>
-    *{
-        text-align:center;
-    }
-    img{
-    margin: auto;
-    }
-  table{
-      margin-left: 38%;
-  }
-  input{
-      width: 50px;
-  }
-  .ancho{
-      width: 200px;
-  }
-    .abajo{
-        width: 200px;
+ <link rel="stylesheet" type="text/css" href="estil.css">
 
-    }
+<style>
+
 </style>
  </head>
  <body>
 <header>
-
 <img  src="logo.png" ><br>
 </header>
 
  <?php
-
+ /*Archivo para funciones*/
+ INCLUDE ("funciones.php");
+/*Tipo de Orden a seguir*/
 $ordenar = "NOM_AUT ASC";
 if (isset($_POST['ordenar'])) {
     $ordenar = $_POST['ordenar'];
 }
-
 if (isset($_POST['Ascendente'])) {
     $ordenar = "NOM_AUT ASC";
 }
@@ -54,15 +35,14 @@ if (isset($_POST['codiAsc'])) {
 if (isset($_POST['codiDesc'])) {
     $ordenar = "ID_AUT DESC";
 }
-
+/*Realizar la conexion*/
 $mysqli = new mysqli("localhost", "biblioteca", "Calamorell", "biblioteca");
 
 // Comprobar conexion
 if ($mysqli->connect_error) {
     die("Conexion fallida: " . $mysqli->connect_error);
 }
-echo "Se ha podido conectar correctamente";
-echo "<br>";
+
 $mysqli->set_charset("utf8");
 
 /*Filtro */
@@ -72,7 +52,7 @@ if ($busqueda != '') {
     $filtra = "where ID_AUT = '$busqueda' OR NOM_AUT like '%$busqueda%'";
 }
 
-/**/
+/*Obtener las paginas*/
 if (isset($_POST['calculopaginas'])) {
     $total_paginas = $_POST['calculopaginas'];
 } else {
@@ -93,7 +73,7 @@ if ($fila2 = $cursor3->fetch_assoc()) {
     $finicher2 = $fila2['total'];
     $pagina = ceil($finicher2 / $resultados);
 }
-
+/*Inicio Paginación*/
 /*Calcular el siguiente*/
 if (isset($_POST['siguiente'])) {
     if (!($total_paginas == $pagina)) {
@@ -124,46 +104,66 @@ if (isset($_POST['final'])) {
     $mantener = $finicher - $resultados;
     $total_paginas = ceil($finicher / $resultados);
 }
-
-$query = "SELECT ID_AUT, NOM_AUT FROM autors $filtra";
+/*Fin Paginación*/
+$query = "SELECT ID_AUT, NOM_AUT, FK_NACIONALITAT FROM autors $filtra";
 $query .= " ORDER BY $ordenar LIMIT $mantener , $resultados";
 
-/*Obtenemos los datos de la consulta global
-if($_POST['busqueda'] = ''){
-$principal="SELECT ID_AUT, NOM_AUT FROM autors $filtra";
+/*Realizar la accion de borrar*/
+$borrar = "";
+if (isset($_POST['eliminar'])) {
+    $borrar = $_POST['eliminar'];
+    $queryBorrar = "DELETE from AUTORS where ID_AUT = $borrar";
+    $cursor = $mysqli->query($queryBorrar) or die($queryBorrar);
+}
+/*Incluir el nuevo Autor*/
+if (isset($_POST['añadir'])) {
+    $nuevo = $mysqli->real_escape_string($_POST['busquedaañadir']);
+    $incluir = "INSERT INTO AUTORS(ID_AUT, NOM_AUT) VALUES((SELECT MAX(ID_AUT)+1 FROM autors AS TOTAL), '$nuevo')";
+    $cursor5 = $mysqli->query($incluir) or die("Error query" . $incluir);
+}
+/*editar*/
+$modificar  = "";
+if(isset($_POST['modificar'])){
+$modificar = $_POST['modificar'];
+}
+/*Añadir los cambios*/
+if(isset($_POST['guardar'])){
+$editarAutor = $mysqli->real_escape_string($_POST['editarAutor']);
+$ordenacion=($_POST['ordenacion']);
+$guardar = $mysqli->real_escape_string($_POST['guardar']);
+/*Poner pais en null o la nacionalidad*/
+if($ordenacion==""){
+$queryGuardar = "UPDATE AUTORS SET NOM_AUT ='$editarAutor',FK_NACIONALITAT= null where ID_AUT = $guardar";
 }else{
-$principal=$query;
+    $queryGuardar = "UPDATE AUTORS SET NOM_AUT ='$editarAutor',FK_NACIONALITAT= '$ordenacion' where ID_AUT = $guardar";
 }
-
-echo"hola".$principal;
-$consulta_global= mysqli_query($mysqli,$principal);
-Todos los resultados
-$total_registros=mysqli_num_rows($consulta_global);
-Obtener el total de paginas
-Registros/el limite que quiero
-$total_paginas= ceil($total_registros/$resultados);
- */
-if (isset($_POST['Borrar'])) {
-    $borrar = $_POST['Borrar'];
-    $query = "DELETE From autors Where 'ID_AUT'=$borrar";
-    $cursor=$mysqli->query($query)OR die($query);
+/*Guardar cambios*/
+$resultat = $mysqli->query($queryGuardar) or die($queryGuardar);
 }
-if (isset($_POST['incluir'])) {
-    $añadir = $_POST['incluir'];
-    $query = "UPDATE AUTORS SET ID_AUT=auto,NOM_AUT=auto  Where 'ID_AUT'=$añadir";
-
-}
-
+/*Select de Nacionalitat*/
+$basico="Elija una opcion";
 
 echo "<table border = 1 px>";
+/*Botones para Editar y Borrar*/
 if ($cursor = $mysqli->query($query)) {
+    echo "<tr><td>ID</td><td>Autor</td><td>Nacionalidad</td><td colspan='2'>Acciones</td><tr>";
     while ($row = $cursor->fetch_assoc()) {
-        echo "<tr><td>" . $row["ID_AUT"] . "</td><td>" . $row["NOM_AUT"] . "</td>";
-        echo "<td><button type='submit' form='formulario' name='incluir' value='{$row["ID_AUT"]}'>
-        Añadir</button></td>";
-        echo "<td><button type='submit' form='formulario' name='Borrar' value='{$row["ID_AUT"]}'>
+       
+        if($modificar == $row["ID_AUT"]){
+            echo "<tr><td>" . $row["ID_AUT"] . "</td>";
+                    echo "<td><input type='text' name='editarAutor' class='ancho' value='{$row["NOM_AUT"]}' form='formulario' /></td>";
+                    echo "<td>";/*Select con las nacionalidades*/
+                    echo nacionalidades($mysqli, 'formulario', $basico, 'ordenacion');
+                    echo"</td>";/*Botones de Si y No*/
+                    echo "<td><button type='submit' form='formulario' name='guardar' class='confirmar' value='{$row["ID_AUT"]}'>Si</button></td>
+                    <td><button type='submit' form='formulario' name='denegar' class='negar' value='{$row["ID_AUT"]}'>No </button></td>";
+                }else{
+                    echo "<tr><td>" . $row["ID_AUT"] . "</td><td>" . $row["NOM_AUT"] ."</td><td>" . $row["FK_NACIONALITAT"] ."</td>";
+                    echo "<td><button type='submit' form='formulario' name='modificar' value='{$row["ID_AUT"]}'>
+                    Editar</button></td>";
+                    echo "<td><button type='submit' form='formulario' name='eliminar' value='{$row["ID_AUT"]}'>
     Borrar</button></td>";
-
+                }
         echo " </tr>";
 
     }
@@ -172,7 +172,7 @@ if ($cursor = $mysqli->query($query)) {
 /*Input amb el cerca de nom o codi*/
 ?>
 <div>
-<form name="formulario" action="" method="POST" >
+<form name="ordenacion" action=""  id="formulario" method="POST" >
    <input type="submit" name="Ascendente"  value="A-Z"  />
    <input type="submit" name="Descendente"  value="Z-A" /><BR>
    <input type="submit" name="codiAsc"  value="0-9"  />
@@ -187,31 +187,25 @@ if ($cursor = $mysqli->query($query)) {
     <input type="submit" name="siguiente" value=">"/>
     <input type="submit" name="final" value=">>"/>
     <br>
+
     <input type ="text" name="busqueda" class="ancho" value="<?=$busqueda?>"/>
     <input type="submit" value="cercarID" >
-
+    <br>
     <input type="submit" name="mostrar" value="..." />
 </form><br>
 <div>
 <?php
-echo " $total_paginas" . "/" . "$pagina <br>";
-/*
-<form name="buscar" action="" method="POST" >
-<fieldset>
-<legend>Introduzca un numero <br>o un nombre<br>para buscar</legend>
-<input type ="text" name="busqueda" class="ancho" />
-<input type="submit" value="cercarID" >
-</fieldset>
-</form><br>*/
-
+/*Nuevo Autor*/
 if (isset($_POST['mostrar'])) {
-    
-    echo"<div> <input type ='text' name='busquedaañadir' class='abajo' value='<?=$busqueda?>'/>";
-    echo " <input type='submit' value='Añadir' ></div>";
+    echo "<fieldset><b>Añadir un nuevo Autor</b>";
+    echo "<form name='nuevosnombres'  action='' method='POST'>";
+    echo "<input type='text' name='busquedaañadir' id='busquedaañadir' class='ancho'/>";
+    echo "<button type='submit' name='añadir'>Añadir:</button>";
+    echo "</form></fieldset>";
+}
+echo " $total_paginas" . "/" . "$pagina <br>";
 
- }else{echo "incluir";}
+$mysqli->close();
 ?>
-
-
  </body>
  </html>

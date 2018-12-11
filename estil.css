@@ -1,0 +1,30 @@
+*{
+    text-align:center;
+}
+img{
+margin: auto;
+}
+table{
+
+  text-align:center;
+  margin: 0 auto;
+}
+input{
+  width: 50px;
+}
+.ancho{
+  width: 200px;
+}
+button.confirmar{
+  color: azure;
+  background-color: green;
+}
+button.negar{
+  width: 100px;
+  text-decoration: none;
+  padding: 3px;
+  color: #ffffff;
+  background-color: #1883ba;
+  border-radius: 6px;
+  border: 2px solid #0016b0;
+}
